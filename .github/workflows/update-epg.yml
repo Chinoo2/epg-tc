@@ -1,0 +1,36 @@
+name: Actualizar EPG TCC
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 06:00 UTC todos los días
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Generar EPG
+        run: python epg_tcc.py
+
+      - name: Commit y push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add epg.xml
+          git commit -m "Actualizar EPG $(date -u)" || echo "Sin cambios"
+          git push
