@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 API = "https://www.tccvivo.com.uy/api/v1/navigation_filter/1575/filter/"
 
-ahora_utc = datetime.now(timezone.utc)
-dia = ahora_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+ahora = datetime.now(timezone.utc)
+dia = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
 
 bloques = [
     (dia, dia + timedelta(hours=12)),
@@ -19,14 +19,17 @@ for inicio, fin in bloques:
     end = fin.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     url = (
-        API
-        + "?cable_operator=1"
-        + "&emission_start=" + start
-        + "&emission_end=" + end
-        + "&format=json"
+        f"{API}?cable_operator=1"
+        f"&emission_start={start}"
+        f"&emission_end={end}"
+        "&format=json"
     )
 
-    data = requests.get(url, timeout=30).json()
+    print("Consultando:", url)
+
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    data = r.json()
 
     for canal in data.get("results", []):
         canal_id = str(canal.get("service_id", canal.get("id", "0")))
@@ -35,7 +38,9 @@ for inicio, fin in bloques:
         dn = SubElement(ch, "display-name")
 
         loc = canal.get("localized", [])
-        dn.text = loc[0].get("title", "Canal") if loc else "Canal"
+        nombre = loc[0].get("title", "Canal") if loc else "Canal"
+        dn.text = nombre
 
 ElementTree(tv).write("epg.xml", encoding="utf-8", xml_declaration=True)
+
 print("EPG generado correctamente")
